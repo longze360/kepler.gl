@@ -68,6 +68,8 @@ export type KeplerApplicationConfig = {
   rasterServerServerErrorsToRetry?: number[];
   /** Maximum number of simultaneous requests per raster server. 0 - no limit */
   rasterServerMaxPerServerRequests?: number;
+  /** Whether to show the server input field in the raster tile layer setup form */
+  rasterServerShowServerInput?: boolean;
 
   // WMS layer config -- Experimental
   // WMS layer is under development and not ready for production use. Disabled by default.
@@ -113,11 +115,10 @@ const DEFAULT_APPLICATION_CONFIG: Required<KeplerApplicationConfig> = {
   useOnFilteredItemsChange: false,
 
   // Raster Tile layer config
-  enableRasterTileLayer: false,
+  enableRasterTileLayer: true,
   rasterServerUseLatestTitiler: true,
-
-  // TODO: provide a default free server or leave blank
-  rasterServerUrls: [],
+  rasterServerShowServerInput: true,
+  rasterServerUrls: [], // TODO: provide a default free server or leave blank
   rasterServerSupportsElevation: true,
   rasterServerMaxRetries: 1,
   rasterServerRetryDelay: 10000,
@@ -125,7 +126,7 @@ const DEFAULT_APPLICATION_CONFIG: Required<KeplerApplicationConfig> = {
   rasterServerMaxPerServerRequests: 0,
 
   // WMS layer config
-  enableWMSLayer: false
+  enableWMSLayer: true
 };
 
 const applicationConfig: Required<KeplerApplicationConfig> = DEFAULT_APPLICATION_CONFIG;

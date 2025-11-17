@@ -91,6 +91,9 @@ interface PlotContainerProps {
 
   // Flags
   enableErrorNotification?: boolean;
+
+  // Optional: override legend header logo during export
+  logoComponent?: React.ReactNode;
 }
 
 export default function PlotContainerFactory(
@@ -117,7 +120,8 @@ export default function PlotContainerFactory(
     addNotification,
 
     // Flags
-    enableErrorNotification
+    enableErrorNotification,
+    logoComponent
   }: PlotContainerProps) {
     const plottingAreaRef = useRef<HTMLDivElement>(null);
     const [plotEffects] = useState<Effect[]>(() =>
@@ -272,7 +276,8 @@ export default function PlotContainerFactory(
         mapControls: {
           mapLegend: {
             show: Boolean(legend),
-            active: true
+            active: true,
+            settings: mapFields.mapControls?.mapLegend?.settings
           }
         },
         MapComponent: Map,
@@ -288,9 +293,11 @@ export default function PlotContainerFactory(
         visState: {
           ...mapFields.visState,
           effects: plotEffects
-        }
+        },
+        // allow overriding the legend panel logo in export
+        logoComponent
       }),
-      [mapFields, scaledMapStyle, newMapState, legend, onMapRender, plotEffects]
+      [mapFields, scaledMapStyle, newMapState, legend, onMapRender, plotEffects, logoComponent]
     );
 
     const isSplit = splitMaps.length > 1;

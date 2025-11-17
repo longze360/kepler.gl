@@ -15,6 +15,67 @@ Each version should:
 Ref: http://keepachangelog.com/en/0.3.0/
 -->
 
+## [3.2.1] - Nov 3 2025
+
+- d2b130f95 fix: detect h3 column in arrow (#3230)
+- 2aa200913 fix: interaction panel causes layout shift (#3224)
+- 2e24bd207 feat: extend bigInt casting to support UBIGINT HUGEINT UHUGEINT in duckdb (#3227)
+- 79d745ae2 [fix] fix for wkb/wkt saved in DuckDB as varchar (#3208)
+- 24529655d fix: fixes to channel by value (#3216)
+- f211ccd0a [Bug]: Fix scrollTop reest when scrolling horizontally in data table (#3206)
+- b6aee95f3 docs: add security escalation policy (#3210)
+- a6e9cb998 feat: ai assistant support llm proxy server (#3188)
+- 2005927bd [fix] icon layer - render default icon in case svgIconUrl loading fails (#3204)
+- 64ec955ae [chore] Add missing release notes for 3.2 (#3200)
+- 70a129c4e [feat] vector tile layer - add feature uid selector (#3203)
+- 2b8af8260 [fix] vector tile layer - use highlightedFeatureId for hover (#3202)
+- 32fb77f42 [chore] bump demo-app example to kepler.gl 3.2 (#3201)
+- 96dcef6b9 [fix] fixes for legend (#3199)
+- 26dd6e832 [website] fix mobile layout (#3197)
+- 7be817789 [website] Add OpenJS Foundation copyright and logo (#3196)
+
+## [3.2.0] - Aug 21 2025
+
+- 3b0be2dda [chore] docs update (#3192)
+- 9c132de28 [chore] docs update (#3180)
+- d4d8d184b [chore] raster tile form - add link to docs (#3183)
+- f91564fb9 [fix] save raster layer config with layer, don't rely on app config (#3184)
+- 420bbf2ad [feat] add support for boolean filter in vector tiles (#3190)
+- e4b64a080 [chore] Replace Studio section with Desktop section (#3189)
+- 751148111 [chore] Fix and update examples to v3.1.10 (#3182)
+
+## [3.1.10] - Aug 14 2025
+
+- 09297acc0 [improvement] optimize speed of getCategoricalColorMap (#3178)
+- 1545fafe5 [chore] Update react-modal types version (#3173)
+- fc1b91fa9 [chore] Create props interface for LinkRenderer Component (#3172)
+- 5f664c3a5 [chore] pass through logoComponent to PlotContainer (#3176)
+- 46cc44109 [fix] fix for a crash in getBins when numeric strings are treated as numbers (#3175)
+- 0850ef2eb [chore] Update the Screenshot Image in Readme (#3171)
+- f2001983a [feat] export duckdb column logic (#3170)
+- 3df1c4ddf [chore] expose showDeleteDataset prop (#3166)
+- 2a666ae0c [chore] export dnd constants
+
+## [3.1.9] - July 28 2025
+
+- 0d6d5fd1a [chore] raster tile - hide server settings by default (#3163)
+- 7551f5d7d [fix] DuckDB mode: space in column name breaks file import (#3153) (#3156)
+- 047334712 [fix] fit to bounds - fix initial basemap and deck projections mismatch (#3155)
+- d43e8bbff [chore] replace ai-assistant model config file with ts for npm availability (#3154)
+- 1a93a2b99 [chore] raster tile layer tests (#3152)
+- 343b554db [feat] WMS layer improvements (#3151)
+- c1d2b8616 [fix] button spinner fix (#3150)
+- a05b3cf6d [fix] WMS layer fixes 2 (#3149)
+- 1a47e08a5 [fix] WMS layer fixes 1 (#3148)
+- 272fd1ae7 [Feat] WMS Layer - development (#3092)
+- 9f656e06c [Docs] Add tutorial Spatial Data Analysis with Kepler.gl AI Assistant (part1) (#3126)
+- ca628b523 [Chore] rewrite plot container for perf improvement (#3133)
+- 49f4c3de2 [chore] Update old imports (#3131)
+- 3b6e9049a [fix] improvements for raster tile layer (#3124)
+- 4237b0a0e [chore] migrate custom-palette from react-sortable-hoc to dnd-kit (#3128)
+- 49fbf8faa [fix] aggregation layers fixes for custom color scale (#3129)
+- edf1f1ddd [fix] spatial join ai instruction (#3127)
+
 ## [3.1.8] - May 26 2025
 
 - 4fd570c3e [example] Kepler.gl getting started example with Vite (#3123)

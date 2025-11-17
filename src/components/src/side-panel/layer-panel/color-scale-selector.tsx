@@ -13,6 +13,7 @@ import {
   getLegendOfScale,
   initCustomPaletteByCustomScale,
   histogramFromValues,
+  histogramFromOrdinal,
   histogramFromThreshold,
   getHistogramDomain,
   hasColorMap
@@ -147,6 +148,28 @@ function ColorScaleSelectorFactory(
     );
     const [tippyInstance, setTippyInstance] = useState<TippyInstance>();
     const isEditingColorBreaks = colorUIConfig?.colorRangeConfig?.customBreaks;
+
+    // Stores the previous selection for live preview: when choosing Custom/Custom Ordinal, we apply a temporary palette.
+    // Cancel restores {scale, range} from this ref; Confirm keeps the change and clears the ref.
+    // If the user switches between different custom scale types (e.g., from "Custom" to "Custom Ordinal") or is already in a custom scale state,
+    // this ref is updated to always store the most recent non-custom selection. Only the latest non-custom selection is restorable on cancel.
+    const prevSelectionRef = React.useRef<{scale: string; range: ColorRange} | null>(null);
+
+    // when custom color scale - but Confirm is not clicked yet
+    const pendingOption = useMemo(
+      () =>
+        isEditingColorBreaks
+          ? (dropdownSelectProps.options || []).find(
+              o => getOptionValue(o) === colorUIConfig?.customPalette?.type
+            ) || null
+          : null,
+      [
+        isEditingColorBreaks,
+        dropdownSelectProps.options,
+        getOptionValue,
+        colorUIConfig?.customPalette?.type
+      ]
+    );
     const colorScale = useMemo(
       () =>
         getLayerColorScale({
@@ -176,8 +199,17 @@ function ColorScaleSelectorFactory(
         : idx => dataset.dataContainer.rowAsArray(idx);
     }, [dataset, field]);
 
+    const ordinalDomain = useMemo(() => {
+      return layer.config[layer.visualChannels[channelKey].domain] || [];
+    }, [channelKey, layer.config, layer.visualChannels]);
+
     // aggregatedBins should be the raw data
     const allBins = useMemo(() => {
+      if (field?.type === ALL_FIELD_TYPES.string) {
+        // Use ordinal bins for string columns, as d3 could potentially generate invalid numeric bins, and crash
+        return histogramFromOrdinal(ordinalDomain, dataset.allIndexes, fieldValueAccessor);
+      }
+
       if (aggregatedBins) {
         return histogramFromValues(
           Object.values(aggregatedBins).map(bin => bin.i),
@@ -188,15 +220,11 @@ function ColorScaleSelectorFactory(
       return columnStats?.bins
         ? columnStats?.bins
         : histogramFromValues(dataset.allIndexes, HISTOGRAM_BINS, fieldValueAccessor);
-    }, [aggregatedBins, columnStats, dataset, fieldValueAccessor]);
+    }, [aggregatedBins, columnStats, dataset, fieldValueAccessor, field?.type, ordinalDomain]);
 
     const histogramDomain = useMemo(() => {
       return getHistogramDomain({aggregatedBins, columnStats, dataset, fieldValueAccessor});
     }, [dataset, fieldValueAccessor, aggregatedBins, columnStats]);
-
-    const ordinalDomain = useMemo(() => {
-      return layer.config[layer.visualChannels[channelKey].domain] || [];
-    }, [channelKey, layer.config, layer.visualChannels]);
 
     const isFiltered = aggregatedBins
       ? false
@@ -207,28 +235,37 @@ function ColorScaleSelectorFactory(
       if (!isFiltered) {
         return allBins;
       }
-      // get threholds
+      if (field?.type === ALL_FIELD_TYPES.string) {
+        return histogramFromOrdinal(
+          ordinalDomain as any,
+          dataset.filteredIndexForDomain,
+          fieldValueAccessor
+        );
+      }
+      // numeric thresholds
       const filterEmptyBins = false;
-      const threholds = allBins.map(b => b.x0);
+      const thresholds = allBins.map(b => b.x0);
       return histogramFromThreshold(
-        threholds,
+        thresholds,
         dataset.filteredIndexForDomain,
         fieldValueAccessor,
         filterEmptyBins
       );
-    }, [dataset, fieldValueAccessor, allBins, isFiltered]);
+    }, [dataset, fieldValueAccessor, allBins, isFiltered, field?.type, ordinalDomain]);
 
     const onSelectScale = useCallback(
       val => {
         // highlight selected option
-        if (!val || isEditingColorBreaks) return;
+        if (!val) return;
+
         const selectedScale = getOptionValue(val);
-        if (selectedScale === SCALE_TYPES.custom) {
+        if (selectedScale === SCALE_TYPES.custom || selectedScale === SCALE_TYPES.customOrdinal) {
           const customPalette = initCustomPaletteByCustomScale({
             scale: selectedScale,
             field,
             range,
-            colorBreaks
+            colorBreaks,
+            ...(selectedScale === SCALE_TYPES.customOrdinal ? {ordinalDomain} : {})
           });
           setColorUI({
             showColorChart: true,
@@ -237,28 +274,55 @@ function ColorScaleSelectorFactory(
             },
             customPalette
           });
+          // store previous selection for cancel, then preview custom on the map
+          if (!prevSelectionRef.current) {
+            prevSelectionRef.current = {scale: scaleType, range};
+          }
           onSelect(selectedScale, customPalette);
-        } else if (hasColorMap(range) && selectedScale !== SCALE_TYPES.customOrdinal) {
+        } else if (hasColorMap(range)) {
           // not custom
           // remove colorMap
           // eslint-disable-next-line no-unused-vars
           const {colorMap: _, ...newRange} = range;
+          // reset colorUI before changing the scale
+          setColorUI({
+            showColorChart: false,
+            colorRangeConfig: {
+              customBreaks: false
+            }
+          });
           onSelect(selectedScale, newRange);
         } else {
+          // reset colorUI before changing the scale
+          setColorUI({
+            showColorChart: false,
+            colorRangeConfig: {
+              customBreaks: false
+            }
+          });
           onSelect(selectedScale);
         }
       },
-      [isEditingColorBreaks, field, setColorUI, onSelect, range, getOptionValue, colorBreaks]
+      [field, setColorUI, onSelect, range, getOptionValue, colorBreaks, ordinalDomain, scaleType]
     );
 
     const onApply = useCallback(() => {
-      onSelect(scaleType, colorUIConfig.customPalette);
+      // change scale type only if confirmed
+      const nextScaleType = colorUIConfig?.customPalette?.type || scaleType;
+      onSelect(nextScaleType, colorUIConfig.customPalette);
       hideTippy(tippyInstance);
+      prevSelectionRef.current = null;
     }, [onSelect, colorUIConfig.customPalette, tippyInstance, scaleType]);
 
     const onCancel = useCallback(() => {
+      // restore previous selection if any
+      if (prevSelectionRef.current) {
+        const {scale: prevScale, range: prevRange} = prevSelectionRef.current;
+        onSelect(prevScale, prevRange);
+      }
       hideTippy(tippyInstance);
-    }, [tippyInstance]);
+      prevSelectionRef.current = null;
+    }, [tippyInstance, onSelect]);
 
     const isCustomBreaks =
       scaleType === SCALE_TYPES.custom || scaleType === SCALE_TYPES.customOrdinal;
@@ -304,6 +368,9 @@ function ColorScaleSelectorFactory(
                     customListComponent={ColorScaleSelectDropdown}
                     searchable={false}
                     showOptionsWhenEmpty
+                    selectedItems={
+                      pendingOption ? [pendingOption] : dropdownSelectProps.selectedItems
+                    }
                   />
                 )}
               </DropdownWrapper>
@@ -314,7 +381,7 @@ function ColorScaleSelectorFactory(
               <DropdownSelect
                 {...dropdownSelectProps}
                 displayOption={displayOption}
-                value={dropdownSelectProps.selectedItems[0]}
+                value={pendingOption || dropdownSelectProps.selectedItems[0]}
               />
             </div>
           </LazyTippy>
